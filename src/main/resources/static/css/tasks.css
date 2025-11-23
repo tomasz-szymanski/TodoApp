@@ -1,0 +1,147 @@
+/* Base theme variables and global styles migrated from add-task.css */
+:root{
+  --bg:#0f172a; /* slate-900 */
+  --panel:#111827; /* gray-900 */
+  --muted:#94a3b8; /* slate-400 */
+  --text:#e5e7eb; /* gray-200 */
+  --primary:#22d3ee; /* cyan-400 */
+  --primary-600:#0891b2; /* cyan-700 */
+  --danger:#ef4444; /* red-500 */
+  --success:#34d399; /* green-400 */
+}
+*{box-sizing:border-box}
+body{
+  margin:0;min-height:100svh;background:linear-gradient(120deg,#0f172a,#0b1220 60%,#0a101c);
+  color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  display:grid;place-items:center;padding:24px
+}
+.card{
+  width:min(720px,100%);background:radial-gradient(1200px 600px at -10% -10%,#1f2937,transparent),
+  linear-gradient(180deg,#0f172a, #0b1220);border:1px solid rgba(255,255,255,.08);
+  border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.35);overflow:hidden
+}
+header{padding:24px 24px 0 24px}
+h1{margin:0;font-weight:800;letter-spacing:.3px;font-size:28px}
+label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+/* Buttons and utilities */
+button{
+  appearance:none;border:none;background:linear-gradient(180deg,var(--primary),#17bcd3);
+  color:#001018;font-weight:700;letter-spacing:.3px;padding:12px 18px;border-radius:10px;
+  cursor:pointer;box-shadow:0 10px 20px rgba(34,211,238,.25);transition:transform .08s ease, filter .2s
+}
+button:hover{filter:brightness(.98)}
+button:active{transform:translateY(1px)}
+.ghost{background:transparent;color:var(--primary);border:1px solid rgba(34,211,238,.35);box-shadow:none}
+.note{font-size:13px;color:var(--muted)}
+.msg{margin:0 24px 24px 24px;padding:12px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.1);display:none}
+.msg.show{display:block}
+.msg.success{border-color:rgba(52,211,153,.35);background:rgba(52,211,153,.08);color:#d1fae5}
+.msg.error{border-color:rgba(239,68,68,.35);background:rgba(239,68,68,.08);color:#fee2e2}
+footer{padding:0 24px 24px 24px;color:var(--muted);font-size:12px}
+a{color:var(--primary)}
+
+/* Light theme variable overrides */
+.theme-light, body.theme-light{
+  --bg:#f3f4f6; /* gray-100 */
+  --panel:#ffffff; /* white */
+  --muted:#4b5563; /* gray-600 */
+  --text:#111827; /* gray-900 */
+  --primary:#0891b2; /* cyan-700 */
+  --primary-600:#06b6d4; /* cyan-500 */
+  --danger:#b91c1c; /* red-700 */
+  --success:#16a34a; /* green-600 */
+}
+/* Light theme surfaces and inputs */
+body.theme-light{background:linear-gradient(180deg,#e5e7eb,#f3f4f6)}
+body.theme-light .card{background:linear-gradient(180deg,#ffffff,#f9fafb);border:1px solid rgba(0,0,0,.06);box-shadow:0 10px 30px rgba(0,0,0,.15)}
+body.theme-light input[type="text"], body.theme-light textarea{background:#ffffff;border-color:rgba(0,0,0,.12);color:var(--text)}
+body.theme-light input:focus, body.theme-light textarea:focus{box-shadow:0 0 0 3px rgba(8,145,178,.18)}
+body.theme-light .ghost{border-color:rgba(8,145,178,.35)}
+body.theme-light .msg{border-color:rgba(0,0,0,.08)}
+body.theme-light .msg.success{color:#14532d}
+body.theme-light .msg.error{color:#7f1d1d}
+/* Tasks list page specific styles */
+.toolbar{display:flex;justify-content:space-between;align-items:center;padding:16px 24px 0 24px}
+.toolbar a{font-weight:600;text-decoration:none}
+
+#content{padding:0 24px 24px 24px}
+
+/* Inline add form styles */
+.inline-add{padding:0 24px}
+.inline-add form{display:grid;gap:12px;margin-top:8px}
+.inline-add .row{display:grid;gap:12px}
+.inline-add .field label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+.inline-add input[type="text"], .inline-add textarea{width:100%;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:#0b1220;color:var(--text)}
+.inline-add textarea{min-height:80px}
+.inline-add input:focus, .inline-add textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(34,211,238,.18)}
+/* Light theme adjustments for inline form */
+body.theme-light .inline-add input[type="text"], body.theme-light .inline-add textarea{background:#ffffff;border-color:rgba(0,0,0,.12);color:var(--text)}
+
+/* Initial visibility for dynamic sections (JS toggles these) */
+#tableWrap{display:none}
+#error{display:none}
+#emptyState{display:none}
+
+/* Table layout */
+table{width:100%;border-collapse:collapse;margin:16px 0}
+thead th{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:left;padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.1)}
+tbody td{padding:12px;border-bottom:1px solid rgba(255,255,255,.06);vertical-align:top}
+
+/* Column widths */
+.col-date{width:160px}
+.col-name{width:220px}
+.col-status{width:140px}
+.col-actions{width:140px}
+.col-delete{width:60px}
+
+/* Status chips */
+.status{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:999px;font-size:12px;border:1px solid rgba(255,255,255,.12)}
+.status.OPEN{background:rgba(34,211,238,.08);color:#bae6fd;border-color:rgba(34,211,238,.25)}
+.status.IN_PROGRESS{background:rgba(234,179,8,.08);color:#fde68a;border-color:rgba(234,179,8,.25)}
+.status.CLOSED{background:rgba(52,211,153,.08);color:#bbf7d0;border-color:rgba(52,211,153,.25)}
+
+/* Utilities */
+.empty{padding:24px;color:var(--muted)}
+.right{display:flex;gap:8px}
+.col-delete{text-align:center}
+.icon-btn{appearance:none;background:transparent;border:none;color:var(--primary);padding:6px;border-radius:8px;cursor:pointer}
+.icon-btn:hover{background:rgba(34,211,238,.12)}
+.icon-btn.danger{color:var(--danger)}
+.icon-btn.danger:hover{background:rgba(239,68,68,.12)}
+.icon-btn svg{width:18px;height:18px;display:block;fill:currentColor}
+
+/* Light theme overrides for tasks table */
+body.theme-light thead th{border-bottom:1px solid rgba(0,0,0,.12)}
+body.theme-light tbody td{border-bottom:1px solid rgba(0,0,0,.06)}
+body.theme-light .icon-btn:hover{background:rgba(8,145,178,.08)}
+body.theme-light .icon-btn.danger:hover{background:rgba(239,68,68,.08)}
+/* Status chips tuned for light */
+body.theme-light .status{border:1px solid rgba(0,0,0,.12)}
+body.theme-light .status.OPEN{background:rgba(8,145,178,.08);color:#0e7490;border-color:rgba(8,145,178,.25)}
+body.theme-light .status.IN_PROGRESS{background:rgba(202,138,4,.08);color:#92400e;border-color:rgba(202,138,4,.25)}
+body.theme-light .status.CLOSED{background:rgba(22,163,74,.08);color:#166534;border-color:rgba(22,163,74,.25)}
+
+/* Theme toggle animated switch */
+.toggle-btn{position:relative;display:inline-flex;align-items:center;justify-content:flex-start;width:48px;height:28px;background:transparent;border:none;padding:0;margin:0;border-radius:999px;cursor:pointer;outline:none}
+.toggle-btn .track{position:absolute;inset:0;border-radius:999px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.18);transition:background .25s ease,border-color .25s ease}
+.toggle-btn .thumb{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--primary);box-shadow:0 6px 14px rgba(0,0,0,.35);transition:transform .25s ease, background .25s ease}
+/* When light mode is on, reflect with class on button for smooth animation */
+.toggle-btn.is-light .thumb{transform:translateX(20px);background:#0ea5b7}
+.toggle-btn.is-light .track{background:rgba(8,145,178,.15);border-color:rgba(8,145,178,.35)}
+/* Hover/focus states */
+.toggle-btn:hover .track{filter:brightness(1.05)}
+.toggle-btn:focus-visible{box-shadow:0 0 0 3px rgba(34,211,238,.3)}
+
+/* Light theme tuning for toggle */
+body.theme-light .toggle-btn .track{background:rgba(0,0,0,.08);border-color:rgba(0,0,0,.12)}
+body.theme-light .toggle-btn.is-light .track{background:rgba(8,145,178,.15);border-color:rgba(8,145,178,.35)}
+body.theme-light .toggle-btn .thumb{box-shadow:0 6px 14px rgba(0,0,0,.2)}
+
+
+/* Theme indicator icons (sun/moon) next to the toggle */
+#toggleIcon{display:inline-flex;align-items:center;justify-content:center;width:48px;height:28px;color:var(--primary)}
+#toggleIcon svg{width:24px;height:24px;display:block;fill:currentColor}
+#toggleIcon .icon-sun{display:none}
+/* In light mode, show sun and hide moon */
+body.theme-light #toggleIcon .icon-moon{display:none}
+body.theme-light #toggleIcon .icon-sun{display:block}

@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>All Tasks • TodoApp</title>
+  <link rel="stylesheet" href="/css/tasks.css" />
+</head>
+<body>
+  <div class="card">
+    <header>
+      <h1>My ToDo List</h1>
+    </header>
+    <div class="toolbar">
+      <a href="#" id="addToggle">+ Add new task</a>
+      <div class="right">
+          <span id="toggleIcon" aria-hidden="true" title="Theme icon">
+            <!-- Moon (default: dark theme) -->
+            <svg class="icon-moon" viewBox="0 0 24 24" focusable="false">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3a1 1 0 0 1 1.09 1.34A7 7 0 1 0 19.66 11.7 1 1 0 0 1 21 12.79Z"></path>
+            </svg>
+            <!-- Sun (shown in light theme) -->
+            <svg class="icon-sun" viewBox="0 0 24 24" focusable="false">
+              <path d="M12 4a1 1 0 0 1-1-1V2a1 1 0 1 1 2 0v1a1 1 0 0 1-1 1Zm7.07 3.07a1 1 0 0 1 0-1.41l.71-.71a1 1 0 1 1 1.41 1.41l-.71.71a1 1 0 0 1-1.41 0ZM12 20a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0v-1a1 1 0 0 1 1-1ZM4.22 5.66a1 1 0 0 1-1.41 0l-.71-.71A1 1 0 1 1 3.5 2.83l.71.71a1 1 0 0 1 0 1.41ZM22 13a1 1 0 1 1 0-2h1a1 1 0 1 1 0 2h-1ZM2 11a1 1 0 0 1 0 2H1a1 1 0 0 1 0-2h1Zm17.07 7.07a1 1 0 0 1 1.41 0l.71.71a1 1 0 1 1-1.41 1.41l-.71-.71a1 1 0 0 1 0-1.41ZM4.22 18.34a1 1 0 0 1 0 1.41l-.71.71A1 1 0 0 1 2.1 19.05l.71-.71a1 1 0 0 1 1.41 0ZM12 6.5A5.5 5.5 0 1 1 6.5 12 5.51 5.51 0 0 1 12 6.5Z"></path>
+            </svg>
+          </span>
+          <button id="themeToggle" type="button" class="toggle-btn" aria-pressed="false" title="Toggle light/dark theme">
+            <span class="track" aria-hidden="true"></span>
+            <span class="thumb" aria-hidden="true"></span>
+          </button>
+          <button id="refreshBtn" type="button" class="icon-btn" title="Reload" aria-label="Reload">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M12 5a7 7 0 1 1-6.93 6H3a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h4a1 1 0 1 1 0 2H5.62A9 9 0 1 0 12 3v2Z"></path>
+            </svg>
+          </button>
+      </div>
+    </div>
+    <div id="addFormWrap" class="inline-add" style="display:none">
+      <form id="inlineAddForm">
+        <div class="row">
+          <div class="field">
+            <label for="inlineName">Task name</label>
+            <input id="inlineName" name="name" type="text" placeholder="e.g., Buy groceries" required maxlength="120" />
+          </div>
+          <div class="field">
+            <label for="inlineDescription">Description</label>
+            <textarea id="inlineDescription" name="description" placeholder="Optional details, links or notes..."></textarea>
+          </div>
+        </div>
+        <div class="actions">
+          <button type="submit">Add task</button>
+          <button type="button" id="inlineCancel" class="ghost">Cancel</button>
+          <span class="note">Tasks are saved to your local H2 database.</span>
+        </div>
+        <p id="inlineMsg" class="msg" role="status"></p>
+      </form>
+    </div>
+    <div id="content">
+      <div id="loading" class="note">Loading tasks…</div>
+      <div id="error" class="msg error"></div>
+      <div id="tableWrap">
+        <table aria-label="Tasks">
+          <thead>
+            <tr>
+              <th class="col-date">Date</th>
+              <th class="col-name">Name</th>
+              <th>Description</th>
+              <th class="col-status">Status</th>
+              <th class="col-actions">Actions</th>
+              <th class="col-delete" aria-label="Delete"></th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+        <div id="emptyState" class="empty">No tasks yet. Use the "+ Add new task" action to create your first one.</div>
+      </div>
+    </div>
+    <footer>
+      <span>Data source: <code>/todo</code>. H2 console: <code>/h2-console</code>.</span>
+    </footer>
+  </div>
+
+  <script>
+    // Theme toggle logic
+    function applyTheme(theme){
+      if(theme === 'light'){
+        document.body.classList.add('theme-light');
+      } else {
+        document.body.classList.remove('theme-light');
+      }
+    }
+    function refreshThemeButton(){
+      const btn = document.getElementById('themeToggle');
+      if(!btn) return;
+      const isLight = document.body.classList.contains('theme-light');
+      btn.setAttribute('aria-pressed', isLight ? 'true' : 'false');
+      btn.title = isLight ? 'Switch to dark theme' : 'Switch to light theme';
+      btn.classList.toggle('is-light', isLight);
+    }
+    // Initialize theme from localStorage (default: dark)
+    (function initTheme(){
+      const saved = localStorage.getItem('theme') || 'dark';
+      applyTheme(saved);
+      // Defer label update until button exists
+      window.addEventListener('DOMContentLoaded', refreshThemeButton);
+    })();
+
+    async function completeTask(id){
+      const errorEl = document.getElementById('error');
+      errorEl.style.display = 'none';
+      errorEl.textContent = '';
+      try{
+        const res = await fetch(`/todo/${id}/complete`, { method: 'PUT' });
+        if(!res.ok){
+          const t = await res.text();
+          throw new Error(t || ('Request failed with ' + res.status));
+        }
+        await loadTasks();
+      }catch(err){
+        console.error(err);
+        errorEl.textContent = 'Failed to complete task: ' + err.message;
+        errorEl.style.display = 'block';
+      }
+    }
+
+    async function openTask(id){
+      const errorEl = document.getElementById('error');
+      errorEl.style.display = 'none';
+      errorEl.textContent = '';
+      try{
+        const res = await fetch(`/todo/${id}/open`, { method: 'PUT' });
+        if(!res.ok){
+          const t = await res.text();
+          throw new Error(t || ('Request failed with ' + res.status));
+        }
+        await loadTasks();
+      }catch(err){
+        console.error(err);
+        errorEl.textContent = 'Failed to open task: ' + err.message;
+        errorEl.style.display = 'block';
+      }
+    }
+
+    async function deleteTask(id){
+      const errorEl = document.getElementById('error');
+      errorEl.style.display = 'none';
+      errorEl.textContent = '';
+      try{
+        const res = await fetch(`/todo/${id}`, { method: 'DELETE' });
+        if(!res.ok){
+          const t = await res.text();
+          throw new Error(t || ('Request failed with ' + res.status));
+        }
+        await loadTasks();
+      }catch(err){
+        console.error(err);
+        errorEl.textContent = 'Failed to delete task: ' + err.message;
+        errorEl.style.display = 'block';
+      }
+    }
+
+    async function loadTasks(){
+      const loading = document.getElementById('loading');
+      const tableWrap = document.getElementById('tableWrap');
+      const errorEl = document.getElementById('error');
+      const emptyState = document.getElementById('emptyState');
+      const tbody = document.getElementById('tbody');
+
+      loading.style.display = 'block';
+      tableWrap.style.display = 'none';
+      errorEl.style.display = 'none';
+      errorEl.textContent = '';
+      emptyState.style.display = 'none';
+      tbody.innerHTML = '';
+
+      try{
+        const res = await fetch('/todo');
+        if(!res.ok){
+          const t = await res.text();
+          throw new Error(t || ('Request failed with ' + res.status));
+        }
+        const data = await res.json();
+        // data is Iterable<Task> serialized to JSON array of {id, date, name, description, taskStatus}
+        if(!Array.isArray(data) || data.length === 0){
+          emptyState.style.display = 'block';
+        } else {
+
+          for(const t of data){
+            const tr = document.createElement('tr');
+            const tdDate = document.createElement('td');
+            const tdName = document.createElement('td');
+            const tdDesc = document.createElement('td');
+            const tdStatus = document.createElement('td');
+            const tdActions = document.createElement('td');
+            const tdDelete = document.createElement('td');
+            tdDelete.className = 'col-delete';
+
+            tdDate.textContent = t.date ?? '';
+            tdName.textContent = t.name ?? '';
+            tdDesc.textContent = t.description ?? '';
+            const status = (t.taskStatus || '').toString();
+            tdStatus.innerHTML = `<span class="status ${status}">${status || 'UNKNOWN'}</span>`;
+
+            tdActions.innerHTML = '';
+            if (t.id != null) {
+              if (status === 'CLOSED') {
+                const btnOpen = document.createElement('button');
+                btnOpen.textContent = 'Open';
+                btnOpen.type = 'button';
+                btnOpen.className = 'ghost';
+                btnOpen.addEventListener('click', () => openTask(t.id));
+                tdActions.appendChild(btnOpen);
+              } else {
+                const btnComplete = document.createElement('button');
+                btnComplete.textContent = 'Complete';
+                btnComplete.type = 'button';
+                btnComplete.className = 'ghost';
+                btnComplete.addEventListener('click', () => completeTask(t.id));
+                tdActions.appendChild(btnComplete);
+              }
+
+              // Delete icon in its own column
+              const btnDelete = document.createElement('button');
+              btnDelete.type = 'button';
+              btnDelete.className = 'icon-btn danger';
+              btnDelete.title = 'Delete task';
+              btnDelete.innerHTML = `
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M9 3h6a1 1 0 0 1 1 1v2h4a1 1 0 1 1 0 2h-1.05l-1.05 12.6A2 2 0 0 1 15.9 23H8.1a2 2 0 0 1-1.99-1.4L5.05 8H4a1 1 0 1 1 0-2h4V4a1 1 0 0 1 1-1ZM10 6h4V5h-4v1Zm7.95 2H6.05l1 12.05a1 1 0 0 0 .99.95h7.92a1 1 0 0 0 .99-.95L17.95 8ZM10 10a1 1 0 0 1 1 1v8a1 1 0 1 1-2 0v-8a1 1 0 0 1 1-1Zm4 0a1 1 0 0 1 1 1v8a1 1 0 1 1-2 0v-8a1 1 0 0 1 1-1Z"></path>
+                </svg>`;
+              btnDelete.addEventListener('click', () => deleteTask(t.id));
+              tdDelete.appendChild(btnDelete);
+            }
+
+            tr.appendChild(tdDate);
+            tr.appendChild(tdName);
+            tr.appendChild(tdDesc);
+            tr.appendChild(tdStatus);
+            tr.appendChild(tdActions);
+            tr.appendChild(tdDelete);
+            tbody.appendChild(tr);
+          }
+        }
+        tableWrap.style.display = 'block';
+      }catch(err){
+        console.error(err);
+        errorEl.textContent = 'Failed to load tasks: ' + err.message;
+        errorEl.style.display = 'block';
+      }finally{
+        loading.style.display = 'none';
+      }
+    }
+
+    document.getElementById('refreshBtn').addEventListener('click', loadTasks);
+
+    // Inline Add form helpers
+    function todayIsoDate(){
+      const d = new Date();
+      const m = (d.getMonth()+1).toString().padStart(2,'0');
+      const day = d.getDate().toString().padStart(2,'0');
+      return `${d.getFullYear()}-${m}-${day}`;
+    }
+    function showInlineMsg(type, text){
+      const el = document.getElementById('inlineMsg');
+      if(!el) return;
+      el.className = `msg show ${type}`;
+      el.textContent = text;
+    }
+    function hideInlineMsg(){
+      const el = document.getElementById('inlineMsg');
+      if(!el) return;
+      el.className = 'msg';
+      el.textContent = '';
+    }
+
+    // Toggle inline form visibility
+    const addToggle = document.getElementById('addToggle');
+    const addWrap = document.getElementById('addFormWrap');
+    const addForm = document.getElementById('inlineAddForm');
+    const addCancel = document.getElementById('inlineCancel');
+    const inputName = document.getElementById('inlineName');
+
+    if(addToggle && addWrap){
+      addToggle.addEventListener('click', (e) => {
+        e.preventDefault();
+        const isHidden = addWrap.style.display === 'none' || addWrap.style.display === '';
+        if(isHidden){
+          addWrap.style.display = 'block';
+          hideInlineMsg();
+          setTimeout(() => inputName?.focus(), 0);
+        } else {
+          addWrap.style.display = 'none';
+        }
+      });
+    }
+    if(addCancel && addWrap){
+      addCancel.addEventListener('click', () => {
+        addForm?.reset();
+        hideInlineMsg();
+        addWrap.style.display = 'none';
+      });
+    }
+    if(addForm){
+      addForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        hideInlineMsg();
+        const name = (document.getElementById('inlineName')?.value || '').trim();
+        const description = (document.getElementById('inlineDescription')?.value || '').trim();
+        if(!name){
+          showInlineMsg('error', 'Please provide a task name.');
+          inputName?.focus();
+          return;
+        }
+        const payload = { date: todayIsoDate(), name, description, taskStatus: 'OPEN' };
+        try{
+          const res = await fetch('/todo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+          if(!res.ok){
+            const t = await res.text();
+            throw new Error(t || ('Request failed with ' + res.status));
+          }
+          // on success: reset and hide form, then reload tasks
+          addForm.reset();
+          addWrap.style.display = 'none';
+          await loadTasks();
+        }catch(err){
+          console.error(err);
+          showInlineMsg('error', 'Failed to add task: ' + err.message);
+        }
+      });
+    }
+
+    // Theme toggle handler
+    const themeBtn = document.getElementById('themeToggle');
+    if(themeBtn){
+      // Ensure label is in sync now that DOM is ready
+      refreshThemeButton();
+      themeBtn.addEventListener('click', () => {
+        const isLight = document.body.classList.toggle('theme-light');
+        const newTheme = isLight ? 'light' : 'dark';
+        localStorage.setItem('theme', newTheme);
+        refreshThemeButton();
+      });
+    }
+    // Load on first paint
+    loadTasks();
+  </script>
+</body>
+</html>
