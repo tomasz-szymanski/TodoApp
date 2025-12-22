@@ -54,13 +54,14 @@ public class TaskService {
 
 
     private Task toModel(TaskEntity e) {
-        return new Task(e.getId(), e.getDate(), e.getName(), e.getDescription(), e.getTaskStatus());
+        return new Task(e.getId(), e.getDate(), e.getDeadline(), e.getName(), e.getDescription(), e.getTaskStatus());
     }
 
     private TaskEntity toEntity(Task task) {
         TaskEntity e = new TaskEntity();
         e.setId(task.id());
         e.setDate(task.date());
+        e.setDeadline(task.deadline());
         e.setName(task.name());
         e.setDescription(task.description());
         e.setTaskStatus(task.taskStatus());

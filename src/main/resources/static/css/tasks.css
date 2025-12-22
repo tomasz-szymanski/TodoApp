@@ -16,7 +16,8 @@ body{
   display:grid;place-items:center;padding:24px
 }
 .card{
-  width:min(720px,100%);background:radial-gradient(1200px 600px at -10% -10%,#1f2937,transparent),
+  /* Widen the card by ~40% (from 720px to 1008px) so the table can grow */
+  width:min(1008px,100%);background:radial-gradient(1200px 600px at -10% -10%,#1f2937,transparent),
   linear-gradient(180deg,#0f172a, #0b1220);border:1px solid rgba(255,255,255,.08);
   border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.35);overflow:hidden
 }
@@ -88,9 +89,10 @@ thead th{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(
 tbody td{padding:12px;border-bottom:1px solid rgba(255,255,255,.06);vertical-align:top}
 
 /* Column widths */
-.col-date{width:160px}
+.col-date{width:120px}
+.col-deadline{width:160px}
 .col-name{width:220px}
-.col-status{width:140px}
+.col-status{width:100px}
 .col-actions{width:140px}
 .col-delete{width:60px}
 

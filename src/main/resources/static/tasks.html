@@ -1,4 +1,5 @@
 <!doctype html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -15,9 +16,10 @@
       <a href="#" id="addToggle">+ Add new task</a>
       <div class="right">
           <span id="toggleIcon" aria-hidden="true" title="Theme icon">
-            <!-- Moon (default: dark theme) -->
+            <!-- Moon (default: dark theme) — first quarter phase -->
             <svg class="icon-moon" viewBox="0 0 24 24" focusable="false">
-              <path d="M21 12.79A9 9 0 1 1 11.21 3a1 1 0 0 1 1.09 1.34A7 7 0 1 0 19.66 11.7 1 1 0 0 1 21 12.79Z"></path>
+              <!-- Right half illuminated to resemble first quarter -->
+              <path d="M12 3A9 9 0 0 1 21 12A9 9 0 0 1 12 21L12 3Z"></path>
             </svg>
             <!-- Sun (shown in light theme) -->
             <svg class="icon-sun" viewBox="0 0 24 24" focusable="false">
@@ -47,6 +49,12 @@
             <textarea id="inlineDescription" name="description" placeholder="Optional details, links or notes..."></textarea>
           </div>
         </div>
+        <div class="row">
+          <div class="field">
+            <label for="inlineDeadline">Deadline</label>
+            <input id="inlineDeadline" name="deadline" type="datetime-local" />
+          </div>
+        </div>
         <div class="actions">
           <button type="submit">Add task</button>
           <button type="button" id="inlineCancel" class="ghost">Cancel</button>
@@ -63,6 +71,7 @@
           <thead>
             <tr>
               <th class="col-date">Date</th>
+              <th class="col-deadline">Deadline</th>
               <th class="col-name">Name</th>
               <th>Description</th>
               <th class="col-status">Status</th>
@@ -180,7 +189,7 @@
           throw new Error(t || ('Request failed with ' + res.status));
         }
         const data = await res.json();
-        // data is Iterable<Task> serialized to JSON array of {id, date, name, description, taskStatus}
+        // data is Iterable<Task> serialized to JSON array of {id, date, deadline, name, description, taskStatus}
         if(!Array.isArray(data) || data.length === 0){
           emptyState.style.display = 'block';
         } else {
@@ -188,6 +197,7 @@
           for(const t of data){
             const tr = document.createElement('tr');
             const tdDate = document.createElement('td');
+            const tdDeadline = document.createElement('td');
             const tdName = document.createElement('td');
             const tdDesc = document.createElement('td');
             const tdStatus = document.createElement('td');
@@ -196,6 +206,25 @@
             tdDelete.className = 'col-delete';
 
             tdDate.textContent = t.date ?? '';
+            tdDate.title = t.date ?? '';
+            // Format deadline as YYYY-MM-DD HH:mm
+            (function(){
+              const v = t.deadline;
+              if(!v){ tdDeadline.textContent = ''; return; }
+              // accept both 'YYYY-MM-DDTHH:mm' and full ISO strings
+              const parts = v.split('T');
+              if(parts.length < 2){ tdDeadline.textContent = v; return; }
+              const datePart = parts[0];
+              let timePart = parts[1];
+              // strip seconds and timezone if present
+              timePart = timePart.replace('Z','');
+              const hhmm = timePart.split(':');
+              const hh = (hhmm[0]||'00').padStart(2,'0');
+              const mm = (hhmm[1]||'00').padStart(2,'0');
+              const formatted = `${datePart} ${hh}:${mm}`;
+              tdDeadline.textContent = formatted;
+              tdDeadline.title = formatted;
+            })();
             tdName.textContent = t.name ?? '';
             tdDesc.textContent = t.description ?? '';
             const status = (t.taskStatus || '').toString();
@@ -233,6 +262,7 @@
             }
 
             tr.appendChild(tdDate);
+            tr.appendChild(tdDeadline);
             tr.appendChild(tdName);
             tr.appendChild(tdDesc);
             tr.appendChild(tdStatus);
@@ -279,6 +309,7 @@
     const addForm = document.getElementById('inlineAddForm');
     const addCancel = document.getElementById('inlineCancel');
     const inputName = document.getElementById('inlineName');
+    const inputDeadline = document.getElementById('inlineDeadline');
 
     if(addToggle && addWrap){
       addToggle.addEventListener('click', (e) => {
@@ -301,6 +332,20 @@
       });
     }
     if(addForm){
+      // Normalize minutes in datetime-local value (strip seconds)
+      function normalizeMinutes(value){
+        if(!value) return value;
+        const [datePart, timePart] = value.split('T');
+        if(!timePart) return value;
+        const [hh, mm] = timePart.split(':');
+        return `${datePart}T${hh?.padStart(2,'0') || '00'}:${(mm||'00').padStart(2,'0')}`;
+      }
+      inputDeadline?.addEventListener('change', () => {
+        if(inputDeadline.value){
+          inputDeadline.value = normalizeMinutes(inputDeadline.value);
+        }
+      });
+
       addForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         hideInlineMsg();
@@ -311,7 +356,12 @@
           inputName?.focus();
           return;
         }
+        // Build payload, include deadline when provided
         const payload = { date: todayIsoDate(), name, description, taskStatus: 'OPEN' };
+        const deadlineValue = inputDeadline?.value ? normalizeMinutes(inputDeadline.value) : '';
+        if(deadlineValue){
+          payload.deadline = deadlineValue; // Spring can parse ISO LocalDateTime from datetime-local
+        }
         try{
           const res = await fetch('/todo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
           if(!res.ok){
