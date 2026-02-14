@@ -7,9 +7,6 @@ import com.szymaniaq.todo.todoapp.repository.TaskRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
-import java.util.stream.StreamSupport;
-
 @Service
 @AllArgsConstructor
 public class TaskService {
@@ -17,16 +14,14 @@ public class TaskService {
     private final TaskRepository taskRepository;
 
     public Iterable<Task> findAll() {
-        Iterable<TaskEntity> all = taskRepository.findAllOrderByIdDesc();
-        return StreamSupport.stream(all.spliterator(), false)
+        var entities = taskRepository.findAllOrderByIdDesc();
+        return entities.stream()
                 .map(this::toModel)
                 .toList();
     }
 
     public Task save(Task task) {
-        TaskEntity entity = toEntity(task);
-        TaskEntity saved = taskRepository.save(entity);
-        return toModel(saved);
+        return toModel(taskRepository.save(toEntity(task)));
     }
 
     public void deleteById(Long id) {
@@ -42,29 +37,36 @@ public class TaskService {
     }
 
     public Task updateStatus(Long id, TaskStatus status) {
-        Optional<TaskEntity> optional = taskRepository.findById(id);
-        if (optional.isEmpty()) {
-            return null;
-        }
-        TaskEntity entity = optional.get();
-        entity.setTaskStatus(status);
-        TaskEntity saved = taskRepository.save(entity);
-        return toModel(saved);
+        return taskRepository.findById(id)
+                .map(entity -> {
+                    entity.setTaskStatus(status);
+                    return taskRepository.save(entity);
+                })
+                .map(this::toModel)
+                .orElse(null);
     }
 
+    // ... existing code ...
 
-    private Task toModel(TaskEntity e) {
-        return new Task(e.getId(), e.getDate(), e.getDeadline(), e.getName(), e.getDescription(), e.getTaskStatus());
+    private Task toModel(TaskEntity entity) {
+        return new Task(
+                entity.getId(),
+                entity.getDate(),
+                entity.getDeadline(),
+                entity.getName(),
+                entity.getDescription(),
+                entity.getTaskStatus()
+        );
     }
 
     private TaskEntity toEntity(Task task) {
-        TaskEntity e = new TaskEntity();
-        e.setId(task.id());
-        e.setDate(task.date());
-        e.setDeadline(task.deadline());
-        e.setName(task.name());
-        e.setDescription(task.description());
-        e.setTaskStatus(task.taskStatus());
-        return e;
+        TaskEntity entity = new TaskEntity();
+        entity.setId(task.id());
+        entity.setDate(task.date());
+        entity.setDeadline(task.deadline());
+        entity.setName(task.name());
+        entity.setDescription(task.description());
+        entity.setTaskStatus(task.taskStatus());
+        return entity;
     }
 }
